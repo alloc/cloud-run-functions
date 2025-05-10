@@ -1,0 +1,70 @@
+{
+  "type": "object",
+  "properties": {
+    "root": {
+      "oneOf": [
+        {
+          "description": "The base directory when searching for entry points.\n\nDefaults to the config directory (or if no config file is found, the current working directory).",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "globs": {
+      "oneOf": [
+        {
+          "description": "The globs determine which directories are searched for entry points. Only \".ts\" and \".js\" files are matched, so you're not required to include them in the globs.\n\nBy default all directories in the \"root\" are searched.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "extensions": {
+      "oneOf": [
+        {
+          "description": "The extensions to match for entry points.\n\n@default [\".ts\", \".js\"]",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "entrySuffix": {
+      "oneOf": [
+        {
+          "description": "The entry suffix should be a string like \".task\" or \".function\" which must be present in the file name (before the extension) or else that file will be ignored when scanning for entry points.\n\nIt can also be an empty string.",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "adapter": {
+      "oneOf": [
+        {
+          "description": "The adapter wraps your Cloud Run functions at runtime, allowing you to write them with a platform-agnostic HTTP framework, like Hattip.\n\nSet this to \"node\" to skip using an adapter, in which case, your functions should conform to what @google-cloud/functions-framework expects.\n\n@default \"node\"",
+          "enum": [
+            "hattip",
+            "node"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": []
+}

@@ -1,0 +1,66 @@
+{
+  "name": "cloud-run-functions",
+  "type": "module",
+  "version": "0.0.0",
+  "bin": "./dist/main.js",
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "default": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "config.schema.json"
+  ],
+  "license": "MIT",
+  "author": "Alec Larson",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alloc/cloud-run-functions.git"
+  },
+  "prettier": "@alloc/prettier-config",
+  "scripts": {
+    "dev": "rimraf dist && tsup --sourcemap --watch",
+    "build": "rimraf dist && tsup",
+    "format": "prettier --write .",
+    "lint": "tsc-lint",
+    "test": "vitest",
+    "prepublishOnly": "pnpm build"
+  },
+  "devDependencies": {
+    "@alloc/prettier-config": "^1.0.0",
+    "@google-cloud/functions-framework": "latest",
+    "@hattip/adapter-node": "latest",
+    "@hattip/core": "latest",
+    "@types/node": "^22.15.17",
+    "dotenv": "^16.5.0",
+    "prettier": "^3.5.3",
+    "radashi": "^12.4.0",
+    "rimraf": "^6.0.1",
+    "tsc-lint": "^0.1.9",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.3"
+  },
+  "dependencies": {
+    "@zod/mini": "4.0.0-beta.0",
+    "esbuild": "^0.25.4",
+    "find-up-simple": "^1.0.1",
+    "joycon": "^3.1.1",
+    "ordana": "^0.4.0",
+    "picospawn": "^0.3.1",
+    "tinyglobby": "^0.2.13"
+  },
+  "peerDependencies": {
+    "@google-cloud/functions-framework": "*",
+    "@hattip/adapter-node": "*",
+    "dotenv": "*"
+  },
+  "peerDependenciesMeta": {
+    "@hattip/adapter-node": {
+      "optional": true
+    },
+    "dotenv": {
+      "optional": true
+    }
+  }
+}
