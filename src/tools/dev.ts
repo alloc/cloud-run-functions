@@ -3,6 +3,10 @@ import path from 'node:path'
 import $, { PicospawnOptions } from 'picospawn'
 
 export type DevOptions = PicospawnOptions & {
+  /**
+   * Customize the port to use for the development server.
+   * @default 8080
+   */
   port?: string | number
 }
 
