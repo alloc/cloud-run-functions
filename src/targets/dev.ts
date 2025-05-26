@@ -103,6 +103,7 @@ async function createBuild() {
   try {
     const dotenv = await import('dotenv')
     dotenv.config()
+    console.log('[dotenv] Environment variables loaded.')
   } catch {}
 
   type TaskState = {
