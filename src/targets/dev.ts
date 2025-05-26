@@ -1,6 +1,5 @@
 import functions, { Request, Response } from '@google-cloud/functions-framework'
 import esbuild from 'esbuild'
-import { findUpSync } from 'find-up-simple'
 import os from 'node:os'
 import path from 'node:path'
 import { isNumber, timeout, toResult } from 'radashi'
@@ -9,13 +8,17 @@ import { emptyDir } from '../utils/emptyDir'
 import { hash } from '../utils/hash'
 
 async function createBuild() {
-  // The directory from which the dev command was run.
-  const callerDir = process.env.CALLER_DIR ?? ''
+  let {
+    /** The directory from which the dev command was run. */
+    workingDir,
+    /** The directory to start the config search from. */
+    searchDir,
+  } = JSON.parse(process.env.CRF_OPTIONS!) as {
+    workingDir: string
+    searchDir?: string
+  }
 
-  // The directory to start the config search from.
-  const searchDir = process.env.CRF_ROOT
-    ? path.resolve(callerDir, process.env.CRF_ROOT)
-    : callerDir
+  searchDir = path.resolve(workingDir, searchDir ?? '')
 
   const config = loadConfig(searchDir)
 
@@ -54,31 +57,19 @@ async function createBuild() {
       .join('|')})$`
   )
 
-  const nodeModulesDir = findUpSync('node_modules', {
-    cwd: root,
-    type: 'directory',
-  })
-
-  const outDir = emptyDir(
-    nodeModulesDir
-      ? path.join(nodeModulesDir, `.cache/cloud-run-functions-${hash(root, 8)}`)
-      : path.join(os.tmpdir(), `cloud-run-functions-${hash(root, 8)}`)
+  // You should avoid setting the cache directory to a path within a
+  // "node_modules" directory, because this prevents Vitest from loading
+  // sourcemaps.
+  const cacheDir = emptyDir(
+    path.join(os.tmpdir(), 'cloud-run-functions-' + hash(root, 8))
   )
-
-  console.log({
-    root,
-    outDir,
-    entryPoints,
-    knownSuffixesRE,
-  })
 
   const context = await esbuild.context({
     entryPoints,
     absWorkingDir: root,
-    outdir: outDir,
+    outdir: cacheDir,
     bundle: true,
-    format: 'esm',
-    packages: nodeModulesDir ? 'external' : 'bundle',
+    packages: 'bundle',
     sourcemap: true,
     metafile: true,
     logOverride: {

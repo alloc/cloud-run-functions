@@ -17,9 +17,11 @@ export function dev(root?: string) {
   return $('functions-framework --target=dev --source', [source], {
     stdio: 'inherit',
     env: {
-      ...process.env,
-      CRF_ROOT: root,
-      CALLER_DIR: process.cwd(),
+      ...(options.env ?? process.env),
+      CRF_OPTIONS: JSON.stringify({
+        searchDir: root,
+        workingDir: process.cwd(),
+      }),
       PATH: `${binDir}:${process.env.PATH}`,
     },
   })
