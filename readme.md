@@ -27,3 +27,7 @@ When you're ready to deploy, use the `build` command to bundle your functions.
 ```sh
 npx cloud-run-functions build ./path/to/functions/
 ```
+
+## Tips
+
+- If you have the [dotenv](https://www.npmjs.com/package/dotenv) package installed, the dev server will import it and automatically load environment variables from the closest `.env` file. Note that environment variables in `.env` won't override existing `process.env` values.
