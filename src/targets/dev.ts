@@ -2,6 +2,7 @@ import 'source-map-support/register.js'
 
 import functions, { Request, Response } from '@google-cloud/functions-framework'
 import esbuild from 'esbuild'
+import fs from 'node:fs'
 import { Module } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
@@ -64,7 +65,10 @@ async function createBuild() {
   // "node_modules" directory, because this prevents Vitest from loading
   // sourcemaps.
   const cacheDir = emptyDir(
-    path.join(os.tmpdir(), 'cloud-run-functions-' + hash(root, 8))
+    path.join(
+      fs.realpathSync(os.tmpdir()),
+      'cloud-run-functions-' + hash(root, 8)
+    )
   )
 
   const context = await esbuild.context({
