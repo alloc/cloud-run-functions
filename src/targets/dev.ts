@@ -1,5 +1,8 @@
+import 'source-map-support/register.js'
+
 import functions, { Request, Response } from '@google-cloud/functions-framework'
 import esbuild from 'esbuild'
+import { Module } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 import { isNumber, timeout, toResult } from 'radashi'
@@ -69,8 +72,11 @@ async function createBuild() {
     absWorkingDir: root,
     outdir: cacheDir,
     bundle: true,
+    format: 'cjs',
+    platform: 'node',
     packages: 'bundle',
     sourcemap: true,
+    sourcesContent: false,
     metafile: true,
     logOverride: {
       'empty-glob': 'silent',
@@ -146,9 +152,17 @@ async function createBuild() {
           taskState.running++
           taskStates.set(taskName, taskState)
 
-          const taskPath = path.join(root, file) + '?t=' + Date.now()
-          const taskModule = await import(taskPath)
-          const taskHandler = taskModule.default
+          const require = Module.createRequire(import.meta.filename)
+
+          let taskHandler = require(path.join(root, file))
+          while (taskHandler && typeof taskHandler !== 'function') {
+            taskHandler = taskHandler.default
+          }
+          if (!taskHandler) {
+            return () => {
+              throw new Error(`Task ${taskName} is not a function.`)
+            }
+          }
 
           switch (config.adapter) {
             case 'hattip': {
