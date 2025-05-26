@@ -64,6 +64,30 @@
           "type": "null"
         }
       ]
+    },
+    "maxInstanceConcurrency": {
+      "oneOf": [
+        {
+          "description": "The maximum number of instances (per function) that can be run concurrently. You can either set the same limit for all functions or set a different limit for each function.\n\n@default 5",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "number"
+              }
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "required": []

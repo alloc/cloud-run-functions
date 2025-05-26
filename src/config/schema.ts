@@ -40,5 +40,14 @@ export const configSchema = z.partial(
         @default "node"
       `,
     }),
+    maxInstanceConcurrency: z
+      .union([z.number(), z.record(z.string(), z.number())])
+      .register(z.globalRegistry, {
+        description: dedent`
+          The maximum number of instances (per function) that can be run concurrently. You can either set the same limit for all functions or set a different limit for each function.
+
+          @default 5
+        `,
+      }),
   })
 )

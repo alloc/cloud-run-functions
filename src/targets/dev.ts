@@ -1,8 +1,9 @@
-import functions from '@google-cloud/functions-framework'
+import functions, { Request, Response } from '@google-cloud/functions-framework'
 import esbuild from 'esbuild'
 import { findUpSync } from 'find-up-simple'
 import os from 'node:os'
 import path from 'node:path'
+import { isNumber, timeout, toResult } from 'radashi'
 import { loadConfig } from '../config'
 import { emptyDir } from '../utils/emptyDir'
 import { hash } from '../utils/hash'
@@ -107,8 +108,17 @@ async function createBuild() {
     dotenv.config()
   } catch {}
 
+  type TaskState = {
+    running: number
+    queue: PromiseWithResolvers<void>[]
+  }
+
+  const taskStates = new Map<string, TaskState>()
+
+  type TaskHandler = (req: Request, res: Response) => unknown
+
   return {
-    async match(url: URL) {
+    async match(url: URL): Promise<TaskHandler | null> {
       const result = await pendingBuild.promise
       for (const [file, output] of Object.entries(
         result.metafile?.outputs ?? {}
@@ -118,17 +128,52 @@ async function createBuild() {
         }
         const taskName = output.entryPoint.replace(knownSuffixesRE, '')
         if (url.pathname === '/' + taskName) {
+          const taskState = taskStates.get(taskName) ?? {
+            running: 0,
+            queue: [],
+          }
+
+          const taskConcurrency = isNumber(config.maxInstanceConcurrency)
+            ? config.maxInstanceConcurrency
+            : (config.maxInstanceConcurrency?.[taskName] ?? 5)
+
+          if (taskState.running >= taskConcurrency) {
+            // Wait up to 30 seconds for a slot to open up.
+            const ticket = Promise.withResolvers<void>()
+            taskState.queue.push(ticket)
+            const [error] = await toResult(
+              Promise.race([ticket.promise, timeout(30_000)])
+            )
+            // If the ticket is not resolved within 30 seconds, return a 429.
+            if (error) {
+              return (_req, res) => {
+                res.status(429).end()
+              }
+            }
+          }
+
+          taskState.running++
+          taskStates.set(taskName, taskState)
+
           const taskPath = path.join(root, file) + '?t=' + Date.now()
-          console.log('Importing:', taskPath)
           const taskModule = await import(taskPath)
           const taskHandler = taskModule.default
+
           switch (config.adapter) {
             case 'hattip': {
               const { createMiddleware } = await import('@hattip/adapter-node')
-              return createMiddleware(taskHandler)
+              taskHandler = createMiddleware(taskHandler)
             }
-            default:
-              return taskHandler
+          }
+
+          return (req, res) => {
+            const end = res.end.bind(res)
+            res.end = (...args: any[]) => {
+              taskState.running--
+              taskState.queue.shift()?.resolve()
+              return end(...args)
+            }
+            return taskHandler(req, res)
           }
         }
       }
@@ -145,7 +190,12 @@ functions.http('dev', async (req, res) => {
   const handler = await build.match(url)
 
   if (handler) {
-    handler(req, res)
+    try {
+      await handler(req, res)
+    } catch (error) {
+      console.error(error)
+      res.status(500).end()
+    }
   } else {
     res.status(404).end()
   }
