@@ -31,10 +31,6 @@ async function createBuild() {
     ? path.resolve(config.configDir, config.root ?? '')
     : searchDir
 
-  let pendingBuild: PromiseWithResolvers<
-    esbuild.BuildResult<{ metafile: true }>
-  >
-
   const entryPoints: string[] = []
   const requiredSuffix = config.entrySuffix?.replace(/^\.?/, '.') ?? ''
   const knownSuffixes = new Set<string>()
@@ -71,6 +67,11 @@ async function createBuild() {
     )
   )
 
+  type BuildResult = esbuild.BuildResult<{ metafile: true }>
+
+  let pendingBuild: PromiseWithResolvers<BuildResult> | undefined
+  let finishedBuild: BuildResult | undefined
+
   const context = await esbuild.context({
     entryPoints,
     absWorkingDir: root,
@@ -90,11 +91,16 @@ async function createBuild() {
       {
         name: 'build-status',
         setup(build) {
+          pendingBuild = Promise.withResolvers()
           build.onStart(() => {
-            pendingBuild = Promise.withResolvers()
+            pendingBuild ??= Promise.withResolvers()
           })
           build.onEnd(result => {
-            pendingBuild.resolve(result)
+            if (pendingBuild) {
+              pendingBuild.resolve(result)
+              pendingBuild = undefined
+            }
+            finishedBuild = result
           })
         },
       },
@@ -122,7 +128,11 @@ async function createBuild() {
 
   return {
     async match(url: URL): Promise<TaskHandler | null> {
-      const result = await pendingBuild.promise
+      const result = (await pendingBuild?.promise) ?? finishedBuild
+      if (!result) {
+        return null
+      }
+
       for (const [file, output] of Object.entries(
         result.metafile?.outputs ?? {}
       )) {
