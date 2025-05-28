@@ -1,8 +1,9 @@
 import { findUpSync } from 'find-up-simple'
 import path from 'node:path'
 import $, { PicospawnOptions } from 'picospawn'
+import type { BuildOptions } from './build'
 
-export type DevOptions = PicospawnOptions & {
+export interface DevOptions extends PicospawnOptions, BuildOptions {
   /**
    * Customize the port to use for the development server.
    * @default 8080
@@ -13,7 +14,10 @@ export type DevOptions = PicospawnOptions & {
 /**
  * Start the development server in a separate process.
  */
-export function dev(root?: string, { port, ...options }: DevOptions = {}) {
+export function dev(
+  root?: string,
+  { port, define, ...options }: DevOptions = {}
+) {
   const packageDir = findUpSync('dist', {
     cwd: import.meta.dirname,
     type: 'directory',
@@ -33,6 +37,7 @@ export function dev(root?: string, { port, ...options }: DevOptions = {}) {
         CRF_OPTIONS: JSON.stringify({
           searchDir: root,
           workingDir: process.cwd(),
+          define,
         }),
         PATH: `${binDir}:${process.env.PATH}`,
       },

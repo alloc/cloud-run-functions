@@ -1,6 +1,9 @@
 import 'source-map-support/register.js'
 
-import functions, { Request, Response } from '@google-cloud/functions-framework'
+import functions, {
+  type Request,
+  type Response,
+} from '@google-cloud/functions-framework'
 import esbuild from 'esbuild'
 import fs from 'node:fs'
 import { Module } from 'node:module'
@@ -8,22 +11,19 @@ import os from 'node:os'
 import path from 'node:path'
 import { isNumber, timeout, toResult } from 'radashi'
 import { loadConfig } from '../config'
+import type { BuildOptions } from '../tools/build'
 import { emptyDir } from '../utils/emptyDir'
 import { hash } from '../utils/hash'
 
 async function createBuild() {
-  let {
+  const options = JSON.parse(process.env.CRF_OPTIONS!) as BuildOptions & {
     /** The directory from which the dev command was run. */
-    workingDir,
-    /** The directory to start the config search from. */
-    searchDir,
-  } = JSON.parse(process.env.CRF_OPTIONS!) as {
     workingDir: string
+    /** The directory to start the config search from. */
     searchDir?: string
   }
 
-  searchDir = path.resolve(workingDir, searchDir ?? '')
-
+  const searchDir = path.resolve(options.workingDir, options.searchDir ?? '')
   const config = loadConfig(searchDir)
 
   // The directory to search for entry points.
@@ -75,6 +75,7 @@ async function createBuild() {
     entryPoints,
     absWorkingDir: root,
     outdir: cacheDir,
+    define: options.define,
     bundle: true,
     format: 'cjs',
     platform: 'node',
