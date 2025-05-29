@@ -5,6 +5,7 @@ import functions, {
   type Response,
 } from '@google-cloud/functions-framework'
 import esbuild from 'esbuild'
+import { findUpSync } from 'find-up-simple'
 import fs from 'node:fs'
 import { Module } from 'node:module'
 import os from 'node:os'
@@ -111,11 +112,14 @@ async function createBuild() {
   console.log('[esbuild] Watching for changes...')
 
   // Try loading a .env file if one exists and the dotenv package is installed.
-  try {
-    const dotenv = await import('dotenv')
-    dotenv.config()
-    console.log('[dotenv] Environment variables loaded.')
-  } catch {}
+  const envPath = findUpSync('.env', { cwd: root })
+  if (envPath) {
+    try {
+      const dotenv = await import('dotenv')
+      dotenv.config({ path: envPath })
+      console.log('[dotenv] Environment variables loaded.')
+    } catch {}
+  }
 
   type TaskState = {
     running: number
