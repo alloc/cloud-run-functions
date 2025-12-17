@@ -11,10 +11,11 @@ import { Module } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 import { isNumber, timeout, toResult } from 'radashi'
+import { emptyDir } from '../common/emptyDir'
+import { getFunctionFilter } from '../common/functionFilter'
+import { hash } from '../common/hash'
 import { loadConfig } from '../config'
 import type { BuildOptions } from '../tools/build'
-import { emptyDir } from '../utils/emptyDir'
-import { hash } from '../utils/hash'
 
 async function createBuild() {
   const options = JSON.parse(process.env.CRF_OPTIONS!) as BuildOptions & {
@@ -32,31 +33,7 @@ async function createBuild() {
     ? path.resolve(config.configDir, config.root ?? '')
     : searchDir
 
-  const entryPoints: string[] = []
-  const requiredSuffix = config.entrySuffix?.replace(/^\.?/, '.') ?? ''
-  const knownSuffixes = new Set<string>()
-
-  for (const glob of config.globs ?? ['**/*']) {
-    let ext = path.extname(glob)
-    if (ext) {
-      knownSuffixes.add(requiredSuffix + ext)
-      entryPoints.push(
-        requiredSuffix ? glob.replace(ext, requiredSuffix + ext) : glob
-      )
-      continue
-    }
-    for (ext of config.extensions ?? ['.ts', '.js']) {
-      ext = requiredSuffix + ext
-      knownSuffixes.add(ext)
-      entryPoints.push(glob + ext)
-    }
-  }
-
-  const knownSuffixesRE = new RegExp(
-    `(${Array.from(knownSuffixes, e => e.replace(/\./g, '\\.'))
-      .sort((a, b) => b.length - a.length)
-      .join('|')})$`
-  )
+  const functionFilter = getFunctionFilter(config)
 
   // You should avoid setting the cache directory to a path within a
   // "node_modules" directory, because this prevents Vitest from loading
@@ -74,7 +51,7 @@ async function createBuild() {
   let finishedBuild: BuildResult | undefined
 
   const context = await esbuild.context({
-    entryPoints,
+    entryPoints: functionFilter.globs,
     absWorkingDir: root,
     outdir: cacheDir,
     define: options.define,
@@ -143,7 +120,10 @@ async function createBuild() {
         if (!output.entryPoint) {
           continue
         }
-        const taskName = output.entryPoint.replace(knownSuffixesRE, '')
+        const taskName = output.entryPoint.replace(
+          functionFilter.suffixPattern,
+          ''
+        )
         if (url.pathname === '/' + taskName) {
           const taskState = taskStates.get(taskName) ?? {
             running: 0,
