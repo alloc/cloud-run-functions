@@ -69,14 +69,27 @@ async function createBuild() {
       {
         name: 'build-status',
         setup(build) {
+          let startTime: number
           pendingBuild = Promise.withResolvers()
           build.onStart(() => {
             pendingBuild ??= Promise.withResolvers()
+            startTime = Date.now()
           })
           build.onEnd(result => {
             if (pendingBuild) {
               pendingBuild.resolve(result)
               pendingBuild = undefined
+
+              console.log(
+                `[%s] %s your Cloud Run functions in %sms.`,
+                new Date().toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                }),
+                finishedBuild ? 'Rebuilt' : 'Built',
+                Date.now() - startTime
+              )
             }
             finishedBuild = result
           })
