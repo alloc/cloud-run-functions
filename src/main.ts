@@ -9,7 +9,7 @@ import {
   string,
   subcommands,
 } from 'cmd-ts'
-import { objectify } from 'radashi'
+import { parseDefines } from './common/parseDefines'
 
 const dev = command({
   name: 'dev',
@@ -37,34 +37,39 @@ const dev = command({
     const { dev } = await import('./tools/dev')
     await dev(root, {
       port,
-      define:
-        define &&
-        objectify(
-          define.map(d => d.split(':') as [string, string?]),
-          ([key]) => key,
-          ([, value]) =>
-            value
-              ? isNaN(parseFloat(value))
-                ? JSON.stringify(value)
-                : value
-              : ''
-        ),
+      define: parseDefines(define),
     })
   },
 })
 
 const build = command({
   name: 'build',
-  description: 'Generate a bundle for each function',
+  description: 'Bundle your functions for deployment',
   args: {
     root: positional({
       type: optional(string),
       displayName: 'root',
       description: 'Directory to search for function entrypoints',
     }),
+    outdir: option({
+      type: optional(string),
+      long: 'outdir',
+      short: 'o',
+      description: 'The directory to write bundled output to',
+    }),
+    define: multioption({
+      type: optional(array(string)),
+      long: 'define',
+      short: 'd',
+      description: 'Statically replace specific variables in the source code',
+    }),
   },
-  async handler() {
-    throw new Error('Not implemented')
+  async handler({ root, outdir, define }) {
+    const { build } = await import('./tools/build')
+    await build(root, {
+      outdir,
+      define: parseDefines(define),
+    })
   },
 })
 
