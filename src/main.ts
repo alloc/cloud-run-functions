@@ -74,11 +74,29 @@ const build = command({
   },
 })
 
+const preview = command({
+  name: 'preview',
+  description: 'Preview bundled functions locally',
+  args: {
+    outDir: option({
+      type: optional(string),
+      long: 'outDir',
+      short: 'o',
+      description: 'The directory containing the bundled output',
+    }),
+  },
+  async handler({ outDir }) {
+    const { preview } = await import('./tools/preview')
+    await preview({ outDir })
+  },
+})
+
 const cli = subcommands({
   name: 'cloud-run-functions',
   cmds: {
     dev,
     build,
+    preview,
   },
 })
 
