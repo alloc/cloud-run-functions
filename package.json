@@ -1,7 +1,7 @@
 {
   "name": "cloud-run-functions",
   "type": "module",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "bin": "./dist/main.js",
   "exports": {
     "types": "./dist/index.d.ts",
