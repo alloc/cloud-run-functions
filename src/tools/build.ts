@@ -111,6 +111,7 @@ export async function build(
     logOverride: {
       'empty-glob': 'silent',
     },
+    external: ['@google-cloud/functions-framework'],
     plugins: [
       {
         name: 'crf-virtual-functions',
@@ -133,7 +134,6 @@ export async function build(
         },
       },
     ],
-    external: adapter === 'hattip' ? [] : ['@hattip/adapter-node'],
   })
 
   console.log(
