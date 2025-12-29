@@ -23,16 +23,12 @@ export function preview({ outDir, ...options }: PreviewOptions = {}) {
   const sourceDir = path.resolve(process.cwd(), outDir ?? 'dist')
   const source = path.join(sourceDir, 'index.js')
 
-  return $(
-    'functions-framework --target=build --source %s',
-    [source],
-    {
-      stdio: 'inherit',
-      ...options,
-      env: {
-        ...(options.env ?? process.env),
-        PATH: `${binDir}:${process.env.PATH}`,
-      },
-    }
-  )
+  return $('functions-framework --target=build --source %s', [source], {
+    stdio: 'inherit',
+    ...options,
+    env: {
+      ...(options.env ?? process.env),
+      PATH: `${binDir}:${process.env.PATH}`,
+    },
+  })
 }

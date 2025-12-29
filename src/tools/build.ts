@@ -123,14 +123,17 @@ export async function build(
             path: virtualModuleId,
             namespace: virtualModuleNamespace,
           }))
-          build.onLoad({ filter: /.*/, namespace: virtualModuleNamespace }, () => ({
-            contents: createVirtualModule({
-              routes,
-              adapter,
-            }),
-            loader: 'js',
-            resolveDir: functionsRoot,
-          }))
+          build.onLoad(
+            { filter: /.*/, namespace: virtualModuleNamespace },
+            () => ({
+              contents: createVirtualModule({
+                routes,
+                adapter,
+              }),
+              loader: 'js',
+              resolveDir: functionsRoot,
+            })
+          )
         },
       },
     ],

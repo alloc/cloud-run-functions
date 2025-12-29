@@ -55,10 +55,7 @@
       "oneOf": [
         {
           "description": "The adapter wraps your Cloud Run functions at runtime, allowing you to write them with a platform-agnostic HTTP framework, like Hattip.\n\nSet this to \"node\" to skip using an adapter, in which case, your functions should conform to what @google-cloud/functions-framework expects.\n\n@default \"node\"",
-          "enum": [
-            "hattip",
-            "node"
-          ]
+          "enum": ["hattip", "node"]
         },
         {
           "type": "null"
